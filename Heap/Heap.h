@@ -1,6 +1,7 @@
 #pragma once
 #include<iostream>
 #include<climits>
+
 template<class T>
 class HeapNode {
 public:
@@ -29,22 +30,22 @@ template<class T>
 using MaxHeap = HeapNode<T>*;
 
 template<class T>
-MinHeap<T> createMinHeap(int size) {
+MinHeap<T> createMinHeap(int size, T min) {
 	MinHeap<T> H = new HeapNode<T>(size);
 	H->Data = new T[size + 1];
-	//H->Data[0] = minimum;    ÉèÖÃÉÚ±ø
+	H->Data[0] = min;    // ÉèÖÃÉÚ±ø
 	return H;
 }
 
-template<>
-MinHeap<int> createMinHeap<int>(int size) {
-	MinHeap<int> H = new HeapNode<int>(size);
-	H->Data = new int[size + 1];
-	H->Data[0] = INT_MIN;			// ×îĞ¡Öµint×îÎªÉÚ±ø
-	return H;
-}
+//template<>
+//MinHeap<int> createMinHeap<int>(int size) {
+//	MinHeap<int> H = new HeapNode<int>(size);
+//	H->Data = new int[size + 1];
+//	H->Data[0] = INT_MIN;			// ×îĞ¡Öµint×îÎªÉÚ±ø
+//	return H;
+//}
 
-template<class T>
+template<typename T>
 bool isFull(Heap<T> H) {
 	return H->Size == H->Capacity;
 }
@@ -67,6 +68,8 @@ bool insertMin(MinHeap<T> H, T Element) {	// Èô¶ÑÒÑÂú·µ»Øfalse, ·ñÔò°ÑElement²åÈ
 		return true;
 	}
 }
+
+
 
 template<class T>
 bool isEmpty(Heap<T> H) {
@@ -98,6 +101,8 @@ T deleteMin(MinHeap<T> H) {
 	}
 }
 
+
+
 template<class T>
 void procDown(Heap<T> H, int parent) {
 	int child;
@@ -114,6 +119,8 @@ void procDown(Heap<T> H, int parent) {
 	H->Data[parent] = cur;
 }
 
+
+
 template<class T>
 void buildMinHeap(Heap<T> H) {
 	for (int i = H->Size / 2; i > 0; i--)
@@ -121,8 +128,8 @@ void buildMinHeap(Heap<T> H) {
 }
 
 template<class T>
-Heap<T> assignHeap(T mess[], int size) {
-	Heap<T> H = new HeapNode<T>(size);
+Heap<T> assignHeap(T mess[], int size) {			// °ÑÆÕÍ¨Êı×é¸³Öµ¸ø¶Ñ(ĞèÔÚ0Î»ÖÃº¬ÓĞÉÚ±ø)
+	Heap<T> H = new HeapNode<T>(size - 1);
 	H->Data = mess;
 	H->Size = size - 1;
 	return H;
