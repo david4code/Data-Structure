@@ -1,14 +1,12 @@
 #include"HashTable.h"
 
+
 int main() {
-	HashTable<int> H = createTable<int>(10);
-	int key;
+	HashTable<string> H = createTable<string>(9);
+	string tem;
 	for (int i = 0; i < 9; i++) {
-		std::cin >> key;
-		Insert(H, key);
+		std::cin >> tem;
+		Insert(H, tem);
 	}
-	Delete(H, 9);
-	Delete(H, 9);
-	Insert(H, 9);
 	return 0;
 }
