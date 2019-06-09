@@ -1,109 +1,142 @@
 #pragma once
 #include<iostream>
 #include<cmath>
-using EntryType = enum { Empty, Legitimate, Deleted };
+#include<string>
+using std::string;
 constexpr auto MAXTABLESIZE = 100000;
-using Pos = int;				// 散列索引
 
+template<class T>
+class LNode;					// 链表元素模板类声明
 
-static int nextPrime(int init) {	// 返回大于init且不超过MAXTABLESIZE的素数
-	int i, p = (init % 2) ? init + 2 : init + 1;
+template<class T>
+using PtrToLNode = LNode<T>*;	// 链表指针别名
+
+template<class T>
+class LNode {				// 散列表单元元素
+public:
+	T Data;					// 键值
+	PtrToLNode<T> Next;		// 链表指针
+	LNode<T>(T init = "", PtrToLNode<T> ptr = nullptr);		// 构造函数默认值赋值为空字符串
+};
+
+template<class T>
+inline LNode<T>::LNode(T init, PtrToLNode<T> ptr) {
+	Data = init;
+	Next = ptr;
+}
+
+inline int nextPrime(int N) {
+	int i, p = (N % 2) ? N + 2 : N + 1;
 
 	while (p <= MAXTABLESIZE) {
 		for (i = (int)sqrt(p); i > 2; i--)
-			if (!(p%i))break;
-		if (i == 2)break;				// p为素数
-		else							// 继续寻找素数
-			p += 2;
+			if (!(p % i))break;			// p不是素数
+		if (i == 2)break;				// p是素数
+		else p += 2;
 	}
 	return p;
 }
 
 template<class T>
-class Cell {				// 散列表单元元素
-public:
-	T Data;					// 键值
-	EntryType Info;			// 元素状态
-};
+using List = PtrToLNode<T>;
 
 template<class T>
-class TblNode {				// 
+using Position = List<T>;
+
+
+template<class T>
+class TblNode {				// 散列表
 public:
-	Cell<T>   *Cells;
+	List<T>  Heads;			// 表头指针
 	int TableSize;
 };
 
 template<class T>
 using HashTable = TblNode<T>*;
 
+inline int hash(string Key, int TableSize) {			// 字符串散列函数
+	unsigned int H = 0;				// 散列函数值初始化为0
+	int i = 0;
+	while (Key[i] != '\0') {
+		H = (H << 5) + Key[i++];
+	}
+
+	return H % TableSize;
+}
+
 template<class T>
-HashTable<T> createTable(int TableSize) {
-	HashTable<T> H = new TblNode<T>;
-	int size = nextPrime(TableSize);		// 确定散列表长度
+HashTable<T> createTable(int size) {
+	HashTable<T> H = new TblNode<T>;				// 创建散列表指针
 
-	H->TableSize = size;
-	H->Cells = new Cell<T>[H->TableSize];
-
-	for (int i = 0; i < H->TableSize; i++)	// 写入散列表初始长度
-		H->Cells[i].Info = Empty;
-
+	H->TableSize = nextPrime(size);					// 散列表大小为
+	H->Heads = new LNode<T>[H->TableSize];			// 创建链表头结点数组
 	return H;
 }
 
 template<class T>
-int Hash(T key, int size) {			// 确定散列值
-	return key % size;
-}
+Position<T> Find(HashTable<T> H, T Key) {
+	int pos = hash(Key, H->TableSize);
 
-template<class T>
-Pos Find(HashTable<T> H, T Key) {
-	Pos curPos, newPos;
-	curPos = newPos = Hash(Key, H->TableSize);
-	int cNum = 0;				// 冲突计数
+	Position<T> cur = H->Heads[pos].Next;			// 链表头结点中的next指针
 
-	while (H->Cells[newPos].Info != Empty &&	// 当前位置状态不为Empty，且该位置元素不是要找的元素时产生冲突
-		H->Cells[newPos].Data != Key) {		// 平方探测法
-		if (++cNum % 2) {
-			newPos = curPos + (cNum + 1)*(cNum + 1) / 4;
-			if (newPos >= H->TableSize)
-				newPos %= H->TableSize;
-		}
-		else {
-			newPos = curPos - cNum * cNum / 4;
-			while (newPos < 0)
-				newPos += H->TableSize;
-		}
+	while (cur != nullptr && cur->Data != Key) {
+		cur = cur->Next;
 	}
 
-	return newPos;	// 返回空位置或者元素所在位置
+	return cur;										// 未找到返回空指针，否则返回链表元素
 }
 
 template<class T>
-bool Insert(HashTable<T> H, T Key) {		// 由于Find函数的deficit，函数不会在Deleted处插入元素
-	Pos p = Find(H, Key);
+bool Insert(HashTable<T> H, T Key) {
+	int pos = hash(Key, H->TableSize);
+	Position<T> p = Find(H, Key);
 
-	if (H->Cells[p].Info != Legitimate) {	// 位置p中没有元素时,或者元素Key状态为Deleted
-		H->Cells[p].Info = Legitimate;
-		H->Cells[p].Data = Key;
+	if ( p == nullptr) {			// 未找到关键词 插入到散列表相应链表第一个结点
+
+		Position<T> next = H->Heads[pos].Next;
+		H->Heads[pos].Next = new LNode<T>(Key, next);
+
 		return true;
 	}
 	else {
-		std::cout << "键值已存在" << std::endl;
-		return false;			// Key已经存在于散列表中
-	}
-}
-
-
-template<class T>
-bool Delete(HashTable<T> H, T Key) {		// Deleted the Element in the HashTable with Info value Legitimate
-	Pos p = Find(H, Key);
-
-	if (H->Cells[p].Info == Legitimate) {
-		H->Cells[p].Info = Deleted;
-		return true;
-	}
-	else {
-		std::cout << "键值不在哈希列表中" << std::endl;
+		std::cout << "关键词已存在！\n";
 		return false;
 	}
+}
+
+template<class T>
+bool Delete(HashTable<T> H, T Key) {
+	Position<T> p = Find(H, Key);
+
+	if (p == nullptr) {
+		std::cout << "关键词不在列表中！\n";
+		return false;
+	}
+	else {
+		int pos = hash(Key, H->TableSize);
+		Position<T> cur = &H->Heads[pos];
+		while (cur->Next->Data != Key)
+			cur = cur->Next;
+		cur->Next = p->Next;
+		delete p;
+		return true;
+	}
+}
+
+template<class T>
+void destroyTable(HashTable<T> H) {
+	Position<T> cur = nullptr;
+	Position<T> np = nullptr;
+
+	for (int i = 0; i < H->TableSize; i++) {
+		cur = H->Heads[i].Next;
+		while (cur != nullptr) {
+			np = cur->Next;
+			delete cur;
+			cur = np;
+		}
+	}
+
+	delete[]H->Heads;					// 释放头结点数组
+	delete H;							// 释放散列表
 }
